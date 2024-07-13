@@ -29,7 +29,8 @@ AudioConnection          patchCord10(levelControl, 0, output, 0);
 AudioConnection          patchCord11(levelControl, 0, output, 1);
 AudioControlSGTL5000     sgtl5000_1;     //xy=183.1999969482422,311.20001220703125
 // GUItool: end automatically generated code
-
+#define RXD7 28
+#define TXD7 29  
 // GUItool: end automatically generated code
 
 float shape[] = {-1.0, -0.9, -0.7, -0.4, 0.0, 0.4, 0.7, 0.9, 1.0};
@@ -52,10 +53,20 @@ void setup() {
   biquad1.setHighpass(0, 3200);
   setTone();
   deactivateBypass();
+
+  Serial.begin(115200);
+  Serial7.begin(9600);
+  Serial7.setRX(RXD7);
+  Serial7.setTX(TXD7);
 }
 
 void loop() {
-  
+  Serial7.println("Hello from Teensy");
+
+  if (Serial7.available()) {
+        String data = Serial7.readStringUntil('\n');
+        Serial.println("Received from ESP32: " + data);
+    }
 }
 
 void activateBypass(){

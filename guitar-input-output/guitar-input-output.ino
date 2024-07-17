@@ -3,6 +3,10 @@
 #include <SPI.h>
 #include <SD.h>
 #include <SerialFlash.h>
+#include <vector>
+#include <iostream>
+#include <sstream>
+
 
 // GUItool: begin automatically generated code
 AudioInputI2S            input;           //xy=225.1999969482422,190.1999969482422
@@ -34,9 +38,30 @@ AudioControlSGTL5000     sgtl5000_1;     //xy=183.1999969482422,311.200012207031
 // GUItool: end automatically generated code
 
 float shape[] = {-1.0, -0.9, -0.7, -0.4, 0.0, 0.4, 0.7, 0.9, 1.0};
-float preGainVal = 2.5;
-float postGainVal = 1;
-float toneVal = 0.5;
+float preGainVal = 2.5;//0.0-10.0
+float postGainVal = 1; //0.0-1.0
+float toneVal = 0.5;//0.0-1.0
+
+char delimiter = ';';
+const int maxParts = 10;
+/*
+  0:    Rotation Delta
+  1:    Snap Point Delta
+  2:    Is Button Pressed
+  3:    Touch Count
+  4-8:  Finger Data -> Relative Pos of Finger, Pressure, Channels
+*/
+String knobData[maxParts];
+
+float rotationDelta = 0.00;
+int snapPointDelta = 0;
+int snapPoint = 0;
+int isButtonPressed = 0;
+int touchCount = 0;
+
+float preGainRotation;
+float postGainRotation;
+float toneRotation;
 
 
 void setup() {
@@ -54,20 +79,46 @@ void setup() {
   setTone();
   deactivateBypass();
 
-  Serial.begin(115200);
-  Serial7.begin(9600);
+  Serial.begin(9600);
+  Serial7.begin(115200);
   Serial7.setRX(RXD7);
   Serial7.setTX(TXD7);
 }
 
 void loop() {
-  Serial7.println("Hello from Teensy");
-
   if (Serial7.available()) {
-        String data = Serial7.readStringUntil('\n');
-        Serial.println("Received from ESP32: " + data);
+        String data = Serial7.readStringUntil('#');
+        splitString(data, delimiter, knobData, maxParts);
+        parseData(knobData);
+        Serial.println("Rotation: " + String(rotationDelta) + ",Snap Point: " + snapPoint + ", Snap Point Delta: " + String(snapPointDelta) + ", Button Pressed: " + String(isButtonPressed) + ", Touch Count: " + String(touchCount));
     }
 }
+
+void splitString(String data, char delimiter, String* resultArray, int maxParts) {
+  int startIndex = 0;
+  int endIndex = 0;
+  int index = 0;
+  
+  while ((endIndex = data.indexOf(delimiter, startIndex)) >= 0) {
+    if (index < maxParts - 1) {
+      resultArray[index++] = data.substring(startIndex, endIndex);
+    }
+    startIndex = endIndex + 1;
+  }
+  // Add the last part
+  if (startIndex < data.length()) {
+    resultArray[index] = data.substring(startIndex);
+  }
+}
+
+void parseData(String* inputArray){
+  rotationDelta = inputArray[0].toFloat();
+  snapPointDelta = inputArray[2].toInt();
+  snapPoint = inputArray[1].toInt();
+  isButtonPressed = inputArray[3].toInt();
+  touchCount = inputArray[4].toInt();
+}
+
 
 void activateBypass(){
   patchCord1.disconnect();
@@ -90,4 +141,8 @@ void deactivateBypass(){
 void setTone(){
   mixer2.gain(0, 1.0 - toneVal);
   mixer2.gain(1, 0.0 + toneVal);
+}
+
+float calculateValue(float rotation, float minValue, float maxValue){
+  
 }

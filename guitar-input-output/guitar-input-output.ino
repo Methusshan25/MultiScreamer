@@ -43,17 +43,20 @@ float postGainVal = 1; //0.0-1.0
 float toneVal = 0.5;//0.0-1.0
 
 char delimiter = ';';
-const int maxParts = 10;
+const int maxParts = 11;
 /*
   0:    Rotation Delta
-  1:    Snap Point Delta
-  2:    Is Button Pressed
-  3:    Touch Count
-  4-8:  Finger Data -> Relative Pos of Finger, Pressure, Channels
+  1:    Rotation by Touchcount
+  2:    Snap Point
+  3:    Snap Point Delta   
+  4:    Is Button Pressed
+  5:    Touch Count
+  6-10:  Finger Data -> Relative Pos of Finger, Pressure, Channels
 */
 String knobData[maxParts];
 
 float rotationDelta = 0.00;
+float rotationByTouchcount = 0.00;
 int snapPointDelta = 0;
 int snapPoint = 0;
 int isButtonPressed = 0;
@@ -90,7 +93,7 @@ void loop() {
         String data = Serial7.readStringUntil('#');
         splitString(data, delimiter, knobData, maxParts);
         parseData(knobData);
-        Serial.println("Rotation: " + String(rotationDelta) + ",Snap Point: " + snapPoint + ", Snap Point Delta: " + String(snapPointDelta) + ", Button Pressed: " + String(isButtonPressed) + ", Touch Count: " + String(touchCount));
+        Serial.println("Rotation: " + String(rotationDelta) + ", Rotation by Touchcount: " + String(rotationByTouchcount) + ", Snap Point: " + snapPoint + ", Snap Point Delta: " + String(snapPointDelta) + ", Button Pressed: " + String(isButtonPressed) + ", Touch Count: " + String(touchCount));
     }
 }
 
@@ -113,10 +116,11 @@ void splitString(String data, char delimiter, String* resultArray, int maxParts)
 
 void parseData(String* inputArray){
   rotationDelta = inputArray[0].toFloat();
-  snapPointDelta = inputArray[2].toInt();
-  snapPoint = inputArray[1].toInt();
-  isButtonPressed = inputArray[3].toInt();
-  touchCount = inputArray[4].toInt();
+  rotationByTouchcount = inputArray[1].toFloat();
+  snapPointDelta = inputArray[3].toInt();
+  snapPoint = inputArray[2].toInt();
+  isButtonPressed = inputArray[4].toInt();
+  touchCount = inputArray[5].toInt();
 }
 
 

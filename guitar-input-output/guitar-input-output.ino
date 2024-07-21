@@ -7,7 +7,6 @@
 #include <iostream>
 #include <sstream>
 
-
 // GUItool: begin automatically generated code
 AudioInputI2S            input;           //xy=225.1999969482422,190.1999969482422
 AudioMixer4              mixer1;         //xy=474.1999969482422,224.1999969482422
@@ -34,37 +33,40 @@ AudioConnection          patchCord11(levelControl, 0, output, 1);
 AudioControlSGTL5000     sgtl5000_1;     //xy=183.1999969482422,311.20001220703125
 // GUItool: end automatically generated code
 #define RXD7 28
-#define TXD7 29  
-// GUItool: end automatically generated code
+#define TXD7 29
+
+float maxPreGainVal = 10.0;
+float maxToneVal = 1.0;
+float maxPostGainVal = 1.0;
 
 float shape[] = {-1.0, -0.9, -0.7, -0.4, 0.0, 0.4, 0.7, 0.9, 1.0};
 float preGainVal = 2.5;//0.0-10.0
 float postGainVal = 1; //0.0-1.0
 float toneVal = 0.5;//0.0-1.0
 
+bool isActive = true;
+
 char delimiter = ';';
-const int maxParts = 11;
+const int maxParts = 10;
 /*
   0:    Rotation Delta
-  1:    Rotation by Touchcount
-  2:    Snap Point
-  3:    Snap Point Delta   
-  4:    Is Button Pressed
-  5:    Touch Count
-  6-10:  Finger Data -> Relative Pos of Finger, Pressure, Channels
+  1:    Snap Point Delta
+  2:    Is Button Pressed
+  3:    Touch Count
+  4-8:  Finger Data -> Relative Pos of Finger, Pressure, Channels
 */
 String knobData[maxParts];
 
 float rotationDelta = 0.00;
-float rotationByTouchcount = 0.00;
 int snapPointDelta = 0;
 int snapPoint = 0;
+int previousButtonPress = 0;
 int isButtonPressed = 0;
 int touchCount = 0;
 
-float preGainRotation;
-float postGainRotation;
-float toneRotation;
+float preGainRotation = 0;
+float postGainRotation = 0;
+float toneRotation = 0;
 
 
 void setup() {
@@ -93,7 +95,25 @@ void loop() {
         String data = Serial7.readStringUntil('#');
         splitString(data, delimiter, knobData, maxParts);
         parseData(knobData);
-        Serial.println("Rotation: " + String(rotationDelta) + ", Rotation by Touchcount: " + String(rotationByTouchcount) + ", Snap Point: " + snapPoint + ", Snap Point Delta: " + String(snapPointDelta) + ", Button Pressed: " + String(isButtonPressed) + ", Touch Count: " + String(touchCount));
+        if(isButtonPressed && !previousButtonPress){
+          toggleEffects();
+        }
+        if(touchCount == 2){
+          preGainRotation = updateRotation(preGainRotation);
+          preGainVal = calculateValue(preGainRotation, maxPreGainVal);
+          driveControl.gain(preGainVal);
+        }
+        if(touchCount == 3){
+          postGainRotation = updateRotation(postGainRotation);
+          preGainVal = calculateValue(postGainRotation, maxPostGainVal);
+          levelControl.gain(postGainRotation);
+        }
+        if(touchCount == 4){
+          toneRotation = updateRotation(toneRotation);
+          preGainVal = calculateValue(toneRotation, maxToneVal);
+          setTone();
+        }
+        // Serial.println("Rotation: " + String(rotationDelta) + ",Snap Point: " + snapPoint + ", Snap Point Delta: " + String(snapPointDelta) + ", Button Pressed: " + String(isButtonPressed) + ", Touch Count: " + String(touchCount));
     }
 }
 
@@ -114,15 +134,35 @@ void splitString(String data, char delimiter, String* resultArray, int maxParts)
   }
 }
 
-void parseData(String* inputArray){
-  rotationDelta = inputArray[0].toFloat();
-  rotationByTouchcount = inputArray[1].toFloat();
-  snapPointDelta = inputArray[3].toInt();
-  snapPoint = inputArray[2].toInt();
-  isButtonPressed = inputArray[4].toInt();
-  touchCount = inputArray[5].toInt();
+float updateRotation(float rotation){
+  rotation += rotationDelta;
+  if(rotation < 0){
+    rotation = 0;
+  }
+  if(rotation > 270){
+    rotation = 270;
+  }
+  return rotation;
 }
 
+void parseData(String* inputArray){
+  rotationDelta = inputArray[0].toFloat();
+  snapPointDelta = inputArray[2].toInt();
+  snapPoint = inputArray[1].toInt();
+  previousButtonPress = isButtonPressed;
+  isButtonPressed = inputArray[3].toInt();
+  touchCount = inputArray[4].toInt();
+}
+
+void toggleEffects(){
+  if(isActive){
+    deactivateBypass();
+    isActive = false;
+  }else{
+    activateBypass();
+    isActive = true;
+  }
+}
 
 void activateBypass(){
   patchCord1.disconnect();
@@ -147,6 +187,6 @@ void setTone(){
   mixer2.gain(1, 0.0 + toneVal);
 }
 
-float calculateValue(float rotation, float minValue, float maxValue){
-  
+float calculateValue(float rotation, float maxValue){
+  return maxValue * (rotation / 270);
 }

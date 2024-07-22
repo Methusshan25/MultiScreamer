@@ -113,6 +113,7 @@ void loop() {
           preGainVal = calculateValue(toneRotation, maxToneVal);
           setTone();
         }
+        Serial7.print(createOutputString());
         // Serial.println("Rotation: " + String(rotationDelta) + ",Snap Point: " + snapPoint + ", Snap Point Delta: " + String(snapPointDelta) + ", Button Pressed: " + String(isButtonPressed) + ", Touch Count: " + String(touchCount));
     }
 }
@@ -189,4 +190,18 @@ void setTone(){
 
 float calculateValue(float rotation, float maxValue){
   return maxValue * (rotation / 270);
+}
+
+String createOutputString() {
+  String out = "#";
+  if(isActive){
+    out += "1";
+  }else{
+    out += "0";
+  }
+  out += ";";
+  out += "D" + String(preGainVal) + ";";
+  out += "T" + String(toneVal) + ";";
+  out += "L" + String(postGainVal);
+  return out;
 }

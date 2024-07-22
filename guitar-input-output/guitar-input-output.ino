@@ -199,8 +199,8 @@ String createOutputString() {
   }else{
     out += "off ";
   }
-  out += ";";
   out += "D" + String(preGainVal) + " ";
+  out += ";";
   out += "T" + String(toneVal) + " ";
   out += "L" + String(postGainVal);
   out += "#";

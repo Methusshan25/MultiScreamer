@@ -193,15 +193,16 @@ float calculateValue(float rotation, float maxValue){
 }
 
 String createOutputString() {
-  String out = "#";
+  String out = "";
   if(isActive){
-    out += "1";
+    out += "on  ";
   }else{
-    out += "0";
+    out += "off ";
   }
   out += ";";
-  out += "D" + String(preGainVal) + ";";
-  out += "T" + String(toneVal) + ";";
+  out += "D" + String(preGainVal) + " ";
+  out += "T" + String(toneVal) + " ";
   out += "L" + String(postGainVal);
+  out += "#";
   return out;
 }

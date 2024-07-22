@@ -47,7 +47,7 @@ float toneVal = 0.5;//0.0-1.0
 bool isActive = true;
 
 char delimiter = ';';
-const int maxParts = 10;
+const int maxParts = 11;
 /*
   0:    Rotation Delta
   1:    Snap Point Delta
@@ -58,6 +58,7 @@ const int maxParts = 10;
 String knobData[maxParts];
 
 float rotationDelta = 0.00;
+float rotationOnTouch = 0.00;
 int snapPointDelta = 0;
 int snapPoint = 0;
 int previousButtonPress = 0;
@@ -84,8 +85,8 @@ void setup() {
   setTone();
   deactivateBypass();
 
-  Serial.begin(9600);
-  Serial7.begin(115200);
+  Serial7.begin(9600);
+  Serial.begin(115200);
   Serial7.setRX(RXD7);
   Serial7.setTX(TXD7);
 }
@@ -105,16 +106,16 @@ void loop() {
         }
         if(touchCount == 3){
           postGainRotation = updateRotation(postGainRotation);
-          preGainVal = calculateValue(postGainRotation, maxPostGainVal);
+          postGainVal = calculateValue(postGainRotation, maxPostGainVal);
           levelControl.gain(postGainRotation);
         }
         if(touchCount == 4){
           toneRotation = updateRotation(toneRotation);
-          preGainVal = calculateValue(toneRotation, maxToneVal);
+          toneVal = calculateValue(toneRotation, maxToneVal);
           setTone();
         }
         Serial7.print(createOutputString());
-        // Serial.println("Rotation: " + String(rotationDelta) + ",Snap Point: " + snapPoint + ", Snap Point Delta: " + String(snapPointDelta) + ", Button Pressed: " + String(isButtonPressed) + ", Touch Count: " + String(touchCount));
+        Serial.println("Rotation: " + String(rotationDelta) + ",Snap Point: " + snapPoint + ", Snap Point Delta: " + String(snapPointDelta) + ", Button Pressed: " + String(isButtonPressed) + ", Touch Count: " + String(touchCount));
     }
 }
 
@@ -148,11 +149,12 @@ float updateRotation(float rotation){
 
 void parseData(String* inputArray){
   rotationDelta = inputArray[0].toFloat();
-  snapPointDelta = inputArray[2].toInt();
-  snapPoint = inputArray[1].toInt();
+  rotationOnTouch = inputArray[1].toFloat();
+  snapPointDelta = inputArray[3].toInt();
+  snapPoint = inputArray[2].toInt();
   previousButtonPress = isButtonPressed;
-  isButtonPressed = inputArray[3].toInt();
-  touchCount = inputArray[4].toInt();
+  isButtonPressed = inputArray[4].toInt();
+  touchCount = inputArray[5].toInt();
 }
 
 void toggleEffects(){
